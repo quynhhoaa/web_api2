@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Web.Http.Description;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -102,6 +103,7 @@ namespace Todolist_API.Controllers
             var user = new User
             {
                 Username = usermd.Username,
+                Password = usermd.Password,
                 PasswordHash=passwordHash,
                 PasswordSalt=passwordSalt
 
@@ -143,15 +145,15 @@ namespace Todolist_API.Controllers
 
 
 
-        [HttpGet]
+        [HttpPut]
         [Route("list")]
-        [ResponseType(typeof(List<Number>))]
-        public IActionResult GetResultByListID(List<Number> ids)
+        /*[ResponseType(typeof(List<Number>))]*/
+        public IActionResult GetResultByListID([FromBody]List<int> ids)
         {
             List<User> listUser = new List<User>();
             for (int i = 0; i < ids.Count(); i++)
             {
-                var item = _context.Users.Find(ids[i].Value);
+                var item = _context.Users.Find(ids[i]);
                 listUser.Add(item);
             }
             return Ok(listUser);
