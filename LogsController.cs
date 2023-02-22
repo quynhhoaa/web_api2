@@ -20,10 +20,11 @@ namespace Todolist_API.Controllers
         private readonly IConfiguration _configuration;
         private readonly IUserServices _userServices;
 
-        public LogsController(IConfiguration configuration, IUserServices userServices)
+        public LogsController(IConfiguration configuration, IUserServices userServices,MyDbContext context)
         {
             _configuration = configuration;
             _userServices = userServices;
+            _context = context;
         }
 
         [HttpPost("register")]
@@ -32,8 +33,11 @@ namespace Todolist_API.Controllers
             CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
             
             user.Username = request.Username;
+            user.Password=request.Password;
             user.PasswordHash = passwordHash;
             user.PasswordSalt = passwordSalt;
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
 
             return Ok(user);
         }
@@ -47,16 +51,17 @@ namespace Todolist_API.Controllers
                 return BadRequest("User not found.");
             }
 
-            if (!VerifyPasswordHash(request.Password, user.PasswordHash, user.PasswordSalt))
+            var password = _context.Users.Where(x => x.Password == request.Password);
+            if(username==null)
+            {
+                return BadRequest("Password not found.");
+            }
+            var users = _context.Users.FirstOrDefault(x=>x.Username==request.Username && x.Password==request.Password);
+            if (!VerifyPasswordHash(request.Password,users.PasswordHash,users.PasswordSalt))
             {
                 return BadRequest("Wrong password.");
             }
-
-            string token = CreateToken(user);
-
-            var refreshToken = GenerateRefreshToken();
-            SetRefreshToken(refreshToken);
-
+            string token = CreateToken(users);
 
             return Ok(token);
         }
